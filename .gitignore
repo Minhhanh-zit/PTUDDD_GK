@@ -39,3 +39,19 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Backup files
+.foodmanager_backup_*/
+App.backup.js
+App.beforePastel.js
+App.before_detail_*.js
+
+# AI tool settings
+.claude/
+AGENTS.md
+CLAUDE.md
+
+# Local files
+.DS_Store
+node_modules/
+.expo/
