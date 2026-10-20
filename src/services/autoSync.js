@@ -2,7 +2,7 @@ import {
   getSyncDatabase, getCategories, getDishes, getDishDetail,
 } from '../database/database';
 import {
-  getOnlineCategories, getOnlineDishes,
+  getOnlineCategories, getOnlineDishes, getOnlineCategoryById, getOnlineDishById,
   createOnlineCategory, updateOnlineCategory, deleteOnlineCategory,
   createOnlineDish, updateOnlineDish, deleteOnlineDish,
 } from './mockApi';
@@ -355,6 +355,29 @@ async function pendingCount(db) {
   return result?.n || 0;
 }
 
+async function verifyItemEndpoints(remoteCats, remoteDishes) {
+  // Read-only guard. If GET item does not work, PUT/DELETE on item IDs cannot
+  // be considered safe. NEVER blindly fall back to creating duplicates.
+  for (const [type, records, readOne] of [
+    ['BIT246755_DishCategory', remoteCats, getOnlineCategoryById],
+    ['BIT246755_Dish', remoteDishes, getOnlineDishById],
+  ]) {
+    if (!records.length) continue;
+    const expected = remoteId(records[0]);
+    if (!expected) throw new Error(type + ' list lacks an identifier');
+    let fetched;
+    try {
+      fetched = await readOne(expected);
+    } catch (e) {
+      throw new Error(type + '/' + expected + ' item GET failed (' + e.message +
+        '). Check item-level endpoints and primary key in MockAPI dashboard. Upload paused to prevent duplicates.');
+    }
+    if (remoteId(fetched) !== expected) {
+      throw new Error(type + '/' + expected + ' item GET returned another ID. Upload paused.');
+    }
+  }
+}
+
 async function performSync() {
   const db = await getSyncDatabase();
   let stage = 'read remote data';
@@ -366,6 +389,8 @@ async function performSync() {
     if (!Array.isArray(remoteCats) || !Array.isArray(remoteDishes)) {
       throw new Error('MockAPI did not return arrays');
     }
+    stage = 'verify item endpoints';
+    await verifyItemEndpoints(remoteCats, remoteDishes);
     stage = 'prepare pending changes';
     await ensureTracked(db);
     stage = 'match remote categories';
