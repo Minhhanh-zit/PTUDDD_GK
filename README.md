@@ -118,3 +118,9 @@ Có cơ chế `autoSync`: ứng dụng tự đọc MockAPI và xử lý các tha
 - `src/locales/`: từ điển English/Tiếng Việt.
 
 Đã gộp tài liệu cũ `README_BAI_CO_BAN.md` vào README chính để không gây nhầm lẫn. Đây chỉ là lần sắp xếp mã nguồn, chưa bổ sung chức năng tự đồng bộ.
+
+## 9. Lưu ý cấu hình MockAPI hiện tại (20/10/2026)
+
+GET danh sách `BIT246755_DishCategory` thành công, nhưng GET theo ID `/BIT246755_DishCategory/1` đến `/4` trả 404. Danh sách có 23 mục do các POST trước đó bị lặp; 5 món online chỉ tham chiếu các danh mục 1, 2, 3. **Chưa được phép đánh giá đồng bộ online là hoạt động ổn định.**
+
+Đã thêm kiểm tra GET bản ghi đơn lẻ **trước tất cả thao tác ghi**; nếu API không cho truy cập theo ID, app dừng phần upload với lỗi rõ ràng để không tiếp tục tạo dữ liệu trùng. Cần kiểm tra khóa chính và GET/PUT/DELETE cho từng resource trên dashboard MockAPI rồi thử lại. Giữ nguyên SQLite trên iPhone; chưa xóa các danh mục dư.
