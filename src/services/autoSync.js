@@ -237,15 +237,17 @@ async function upsertDish(db, r, remoteCategories) {
       AND "BIT246755_RemoteId"=?`, [rid]);
     if (mapped && (mapped.pending || mapped.deleted)) return false;
     let id = mapped?.id;
+    let created = false;
     if (!id) {
       const existing = await tx.getFirstAsync(`SELECT "BIT246755_Id" AS id
         FROM "${DISH}" WHERE "BIT246755_DishCategoryId"=?
           AND lower(trim("BIT246755_Name"))=lower(trim(?))`, [mappedCategory.id, name]);
       if (existing) {
-        const linked = await tx.getFirstAsync(`SELECT "BIT246755_RemoteId" AS rid
+        const linked = await tx.getFirstAsync(`SELECT "BIT246755_RemoteId" AS rid,
+          "BIT246755_Pending" AS pending, "BIT246755_Deleted" AS deleted
           FROM "${STATE}" WHERE "BIT246755_Entity"='dish'
           AND "BIT246755_LocalId"=?`, [existing.id]);
-        if (linked?.rid) return false;
+        if (linked?.rid || linked?.pending || linked?.deleted) return false;
         id = existing.id;
         await tx.runAsync(`INSERT INTO "${STATE}"
           ("BIT246755_Entity","BIT246755_LocalId","BIT246755_RemoteId",
@@ -259,6 +261,7 @@ async function upsertDish(db, r, remoteCategories) {
           "BIT246755_IsAvailable","BIT246755_Description","BIT246755_DishCategoryId"
         ) VALUES (?,?,?,?,?,?)`, [name,price,time,available,description,mappedCategory.id]);
         id = ins.lastInsertRowId;
+        created = true;
         await tx.runAsync(`INSERT INTO "${STATE}" (
           "BIT246755_Entity","BIT246755_LocalId","BIT246755_RemoteId",
           "BIT246755_Pending","BIT246755_Deleted","BIT246755_Revision")
@@ -271,7 +274,7 @@ async function upsertDish(db, r, remoteCategories) {
       "BIT246755_DishCategoryId" AS categoryId
       FROM "${DISH}" WHERE "BIT246755_Id"=?`, [id]);
     if (!old) return false;
-    let changed = old.name !== name || Number(old.price) !== price ||
+    let changed = created || old.name !== name || Number(old.price) !== price ||
       old.prep !== time || old.available !== available ||
       old.description !== description || old.categoryId !== mappedCategory.id;
     if (changed) {
