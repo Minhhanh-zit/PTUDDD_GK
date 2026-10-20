@@ -85,6 +85,10 @@ export default function DishListScreen({ t, language, onToggleLanguage, filters,
           : (language === 'vi' ? 'Đang kiểm tra mạng...' : 'Checking connection...')}
         {syncStatus?.pending > 0 ? ` · ${syncStatus.pending} ${language === 'vi' ? 'thay đổi chờ gửi' : 'pending changes'}` : ''}
       </Text>
+      {syncStatus?.phase === 'error' && !!syncStatus?.error &&
+        <Text style={s.syncErrorDetail} selectable numberOfLines={3}>
+          {syncStatus.error}
+        </Text>}
       <View style={s.search}><Ionicons name="search-outline" size={21} color={C.blueDark}/>
         <TextInput style={s.searchInput} value={filters.search} onChangeText={search => update({ search })}
           placeholder={t('search')} placeholderTextColor={C.muted}/>
@@ -148,6 +152,7 @@ const s = StyleSheet.create({
   categoryButton: { width: 50, borderRadius: 15, backgroundColor: C.purpleSoft,
     alignItems: 'center', justifyContent: 'center' },
   syncText: { color: C.blueDark, fontSize: 11, marginTop: -7, marginBottom: 12, marginLeft: 4 },
+  syncErrorDetail: { color: C.danger, fontSize: 11, marginBottom: 12, marginLeft: 4 },
   search: { backgroundColor: C.white, borderRadius: 18, height: 53, borderWidth: 1,
     borderColor: C.border, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, gap: 10, marginBottom: 20 },
   searchInput: { flex: 1, color: C.text, fontSize: 14 },
