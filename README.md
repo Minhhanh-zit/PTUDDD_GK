@@ -7,7 +7,7 @@
 - **Công nghệ:** React Native (Expo), JavaScript, `expo-sqlite`, Ionicons
 - **Nền tảng demo:** iPhone thật qua Expo Go
 - **Mã nguồn:** [PTUDDD_GK](https://github.com/Minhhanh-zit/PTUDDD_GK)
-- **Video đã upload:** [demo_foodmanager.mp4](video/demo_foodmanager.mp4)
+- **Video demo (YouTube):** [Xem video](https://youtu.be/j7YK3xQk-vM?si=wVQ0n46lM4q8uI-9)
 
 > **Phạm vi hiện tại:** CRUD và các yêu cầu cơ bản lưu trong SQLite. Có kết nối GET tới MockAPI để kiểm tra số lượng bản ghi online. **Chưa triển khai tự động đồng bộ hai chiều khi mất/có mạng trở lại.** Không nên nhầm nút kiểm tra API với chức năng đồng bộ nâng cao.
 
@@ -70,7 +70,7 @@ src/services/mockApi.js        Hàm GET/POST/PUT/DELETE đến MockAPI
 src/components/Widgets.js      Thành phần UI dùng lại
 src/theme.js                   Màu pastel xanh/tím
 src/i18n.js                    Bản dịch English/Tiếng Việt
-video/demo_foodmanager.mp4     Video đã upload lên repository
+
 ```
 
 > Các hàm POST/PUT/DELETE trong `mockApi.js` là lớp dịch vụ đã khai báo, **chưa tự động được gọi trong quy trình CRUD local**.
@@ -89,13 +89,13 @@ video/demo_foodmanager.mp4     Video đã upload lên repository
 
 ## 6. Video và nộp bài
 
-🎬 **[Xem video trong repository](video/demo_foodmanager.mp4)**
+🎬 **[Xem video demo trên YouTube](https://youtu.be/j7YK3xQk-vM?si=wVQ0n46lM4q8uI-9)**
 
 Theo đề giữa kỳ, cần **hai video khác nhau**:
 - **Video 1:** quay màn hình chạy ứng dụng, demo MSSV, danh sách, CRUD, lọc, ảnh và ngôn ngữ; nộp trong ca kiểm tra.
 - **Video 2:** **thuyết minh bằng lời** về cấu trúc mã nguồn, model/quan hệ, SQLite, chức năng chính, validation, đa ngôn ngữ, và các đoạn code có tiền tố MSSV; hạn **23/10/2026**.
 
-Chỉ một video đã được đặt trong thư mục `video/`; cần đối chiếu nội dung video đó với yêu cầu Video 1/Video 2 và **nộp lên LMS theo đúng quy định**. Việc có link GitHub không đồng nghĩa đã nộp video lên LMS.
+Đường dẫn YouTube ở trên là video demo được cung cấp cho dự án. Cần đối chiếu nội dung video với yêu cầu Video 1/Video 2 và **nộp lên LMS theo đúng quy định**. Việc có link YouTube hoặc GitHub không đồng nghĩa đã nộp video lên LMS.
 
 ## 7. MockAPI (đang phát triển)
 
