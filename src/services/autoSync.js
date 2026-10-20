@@ -178,12 +178,22 @@ async function upload(db, entity, deleted) {
   }
 }
 
+// expo-sqlite's withExclusiveTransactionAsync() resolves to void.
+// Preserve the result returned by the transaction callback explicitly.
+async function withTransactionResult(db, callback) {
+  let result;
+  await db.withExclusiveTransactionAsync(async tx => {
+    result = await callback(tx);
+  });
+  return result;
+}
+
 async function upsertCategory(db, r) {
   const rid = remoteId(r);
   const name = String(readValue(r, 'Name', '')).trim();
   if (!rid || !name) return { changed: false, localId: null };
   const description = String(readValue(r, 'Description', ''));
-  return db.withExclusiveTransactionAsync(async tx => {
+  return withTransactionResult(db, async tx => {
     const mapped = await tx.getFirstAsync(`SELECT "BIT246755_LocalId" AS id,
       "BIT246755_Pending" AS pending, "BIT246755_Deleted" AS deleted
       FROM "${STATE}" WHERE "BIT246755_Entity"='category'
@@ -247,7 +257,7 @@ async function upsertDish(db, r, remoteCategories) {
   const description = String(readValue(r, 'Description', ''));
   const images = parseImages(readValue(r, 'DishImage', null));
 
-  return db.withExclusiveTransactionAsync(async tx => {
+  return withTransactionResult(db, async tx => {
     const mapped = await tx.getFirstAsync(`SELECT "BIT246755_LocalId" AS id,
       "BIT246755_Pending" AS pending, "BIT246755_Deleted" AS deleted
       FROM "${STATE}" WHERE "BIT246755_Entity"='dish'
