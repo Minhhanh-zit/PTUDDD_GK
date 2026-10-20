@@ -56,3 +56,6 @@ CLAUDE.md
 node_modules/
 .expo/
 video/demo_foodmanager.mov
+
+# Local backup files
+*.bak

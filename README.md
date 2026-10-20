@@ -62,14 +62,16 @@ Quét QR trong Expo Go trên iPhone. Khi chạy lần đầu, app sẽ khởi t�
 ```text
 App.js                         Điều hướng màn hình, trạng thái bộ lọc/ngôn ngữ
 src/database/database.js       Khởi tạo SQLite, CRUD, kiểm tra ràng buộc
-src/screens/DishListScreen.js  Danh sách, lọc, sắp xếp, nút kiểm tra MockAPI
+src/screens/DishListScreen.js  Danh sách, tìm kiếm, các bộ lọc và nút kiểm tra MockAPI
 src/screens/DishDetailScreen.js Chi tiết, nhiều ảnh, xác nhận xóa
 src/screens/DishFormScreen.js  Form thêm/sửa, validation, thay ảnh đại diện
 src/screens/CategoryScreen.js  Quản lý loại món ăn
 src/services/mockApi.js        Hàm GET/POST/PUT/DELETE đến MockAPI
+src/components/DishCard.js     Thẻ món ăn, tách riêng khỏi màn hình danh sách
 src/components/Widgets.js      Thành phần UI dùng lại
-src/theme.js                   Màu pastel xanh/tím
-src/i18n.js                    Bản dịch English/Tiếng Việt
+src/utils/dishFilters.js       Logic lọc nhiều điều kiện và sắp xếp
+src/constants/theme.js         Màu pastel xanh/tím, hiển thị tiền và icon danh mục
+src/locales/translations.js    Bản dịch English/Tiếng Việt
 
 ```
 
@@ -103,3 +105,15 @@ Theo đề giữa kỳ, cần **hai video khác nhau**:
 - `https://6ad61022f71f154ac4866450.mockapi.io/BIT246755_Dish`
 
 Hiện có nút gọi hai endpoint GET để kiểm tra số bản ghi online. Phần **offline thay đổi → phát hiện có mạng trở lại → tự đồng bộ lên MockAPI, tránh trùng** là yêu cầu nâng cao **chưa hoàn thành**.
+
+## 8. Tổ chức mã nguồn
+
+- `src/screens/`: các màn hình và tương tác của người dùng.
+- `src/components/`: thành phần UI dùng lại, gồm `DishCard` và `Widgets`.
+- `src/database/`: SQLite, CRUD và ràng buộc dữ liệu.
+- `src/services/`: các hàm HTTP kết nối MockAPI.
+- `src/utils/`: logic lọc và sắp xếp tách khỏi giao diện.
+- `src/constants/`: giao diện màu sắc và các hàm hiển thị.
+- `src/locales/`: từ điển English/Tiếng Việt.
+
+Đã gộp tài liệu cũ `README_BAI_CO_BAN.md` vào README chính để không gây nhầm lẫn. Đây chỉ là lần sắp xếp mã nguồn, chưa bổ sung chức năng tự đồng bộ.

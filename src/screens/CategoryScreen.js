@@ -3,7 +3,7 @@ import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable,
   ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { deleteCategory, getCategories, saveCategory } from '../database/database';
-import { C } from '../theme';
+import { C } from '../constants/theme';
 import { Button, ScreenBar } from '../components/Widgets';
 
 export default function CategoryScreen({ t, language, onToggleLanguage, onBack }) {

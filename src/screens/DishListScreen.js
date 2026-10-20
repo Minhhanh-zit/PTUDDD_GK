@@ -3,7 +3,9 @@ import { ActivityIndicator, Alert, FlatList, Pressable, ScrollView, StyleSheet, 
 import { Ionicons } from '@expo/vector-icons';
 import { getCategories, getDishes } from '../database/database';
 import { getOnlineCategories, getOnlineDishes } from '../services/mockApi';
-import { C, money } from '../theme';
+import { C } from '../constants/theme';
+import DishCard from '../components/DishCard';
+import { filterAndSortDishes, getPriceRangeFlags } from '../utils/dishFilters';
 import { Button, Chip, DishPhoto, EmptyState } from '../components/Widgets';
 
 export default function DishListScreen({ t, language, onToggleLanguage, filters, setFilters, onDetail, onAdd, onCategories }) {
@@ -52,48 +54,10 @@ export default function DishListScreen({ t, language, onToggleLanguage, filters,
     finally { setRefreshing(false); }
   }
   const update = (changes) => setFilters(old => ({ ...old, ...changes }));
-  const rangeInvalid = filters.min !== '' && filters.max !== '' && Number(filters.min) > Number(filters.max);
-  const negativePrice = (filters.min !== '' && Number(filters.min) < 0) || (filters.max !== '' && Number(filters.max) < 0);
+  const { rangeInvalid, negativePrice } = getPriceRangeFlags(filters);
+  const shown = useMemo(() => filterAndSortDishes(dishes, filters), [dishes, filters]);
 
-  const shown = useMemo(() => {
-    if (rangeInvalid || negativePrice) return [];
-    return dishes.filter(d =>
-      d.name.toLocaleLowerCase().includes(filters.search.trim().toLocaleLowerCase()) &&
-      (filters.categoryId === 'all' || d.categoryId === Number(filters.categoryId)) &&
-      (!filters.availableOnly || Boolean(d.isAvailable)) &&
-      (filters.min === '' || d.price >= Number(filters.min)) &&
-      (filters.max === '' || d.price <= Number(filters.max))
-    ).sort((a, b) => filters.sort === 'desc' ? b.price - a.price
-      : filters.sort === 'time' ? a.preparationTime - b.preparationTime : a.price - b.price);
-  }, [dishes, filters, rangeInvalid, negativePrice]);
-
-  const DishItem = ({ item }) => {
-    const quick = item.preparationTime <= 15;
-    return <Pressable style={s.card} onPress={() => onDetail(item.id)}>
-      <View style={s.cardTop}>
-        <DishPhoto uri={item.imageUrl} categoryName={item.categoryName} size={90}/>
-        <View style={{ flex: 1, gap: 7 }}>
-          <Text style={s.dishName} numberOfLines={2}>{item.name}</Text>
-          <Text style={s.categoryName}>{item.categoryName}</Text>
-          <Text style={s.price}>{money(item.price)}</Text>
-        </View>
-        <Ionicons name="chevron-forward-outline" size={19} color={C.purpleDark}/>
-      </View>
-      <View style={s.cardBottom}>
-        <View style={s.inline}><Ionicons name="time-outline" size={15} color={C.purpleDark}/>
-          <Text style={s.small}>{item.preparationTime} min</Text>
-          <Text style={s.quick}>{t(quick ? 'quick' : 'regular')}</Text>
-        </View>
-        <View style={[s.status, !item.isAvailable && s.notAvailable]}>
-          <Ionicons name={item.isAvailable ? 'checkmark-circle-outline' : 'close-circle-outline'}
-            size={13} color={item.isAvailable ? C.success : C.danger}/>
-          <Text style={[s.statusText, !item.isAvailable && { color: C.danger }]}>{t(item.isAvailable ? 'available' : 'unavailable')}</Text>
-        </View>
-      </View>
-    </Pressable>;
-  };
-
-  return <FlatList keyboardShouldPersistTaps="handled" data={shown} renderItem={({ item }) => <DishItem item={item}/>}
+  return <FlatList keyboardShouldPersistTaps="handled" data={shown} renderItem={({ item }) => <DishCard item={item} t={t} onDetail={onDetail}/>}
     keyExtractor={item => String(item.id)} refreshing={refreshing} onRefresh={refresh}
     showsVerticalScrollIndicator={false} contentContainerStyle={s.content}
     ListHeaderComponent={<>
@@ -202,19 +166,7 @@ const s = StyleSheet.create({
   resultsTitle: { color: C.text, fontSize: 20, fontWeight: '900' },
   resultCount: { fontSize: 12, color: C.blueDark, backgroundColor: C.blueSoft,
     padding: 8, borderRadius: 12, overflow: 'hidden' },
-  card: { backgroundColor: C.white, borderRadius: 20, borderWidth: 1, borderColor: C.border,
-    padding: 13, marginBottom: 12 },
-  cardTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  dishName: { color: C.text, fontWeight: '900', fontSize: 16 },
-  categoryName: { color: C.muted, fontSize: 12 }, price: { color: C.blueDark, fontSize: 16, fontWeight: '900' },
-  cardBottom: { borderTopColor: C.border, borderTopWidth: 1, paddingTop: 11, marginTop: 12,
-    flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  inline: { flexDirection: 'row', alignItems: 'center', gap: 6 }, small: { fontSize: 11, color: C.muted },
-  quick: { color: C.purpleDark, backgroundColor: C.purpleSoft, borderRadius: 8,
-    overflow: 'hidden', fontSize: 10, fontWeight: '800', padding: 5 },
-  status: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 9,
-    paddingVertical: 6, borderRadius: 12, backgroundColor: C.successBg },
-  notAvailable: { backgroundColor: C.dangerBg }, statusText: { fontSize: 10, color: C.success, fontWeight: '800' },
+  inline: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   error: { color: C.danger, marginTop: 8, marginBottom: 9, fontSize: 12 },
   footer: { color: C.muted, textAlign: 'center', fontSize: 11, marginTop: 22 },
 });

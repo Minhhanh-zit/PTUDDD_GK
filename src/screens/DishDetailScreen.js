@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { deleteDish, getDishDetail } from '../database/database';
-import { C, money } from '../theme';
+import { C, money } from '../constants/theme';
 import { Button, DishPhoto, EmptyState, ScreenBar } from '../components/Widgets';
 
 export default function DishDetailScreen({ id, t, language, onToggleLanguage, onBack, onEdit, onDeleted }) {

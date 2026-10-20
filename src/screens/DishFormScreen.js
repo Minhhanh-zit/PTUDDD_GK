@@ -3,7 +3,7 @@ import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, Sc
   StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { getCategories, getDishDetail, saveDish } from '../database/database';
-import { C } from '../theme';
+import { C } from '../constants/theme';
 import { Button, Chip, DishPhoto, EmptyState, ScreenBar } from '../components/Widgets';
 
 const isImageUrl = (url) => /^https?:\/\/\S+$/i.test(url);

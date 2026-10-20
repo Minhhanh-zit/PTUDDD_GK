@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { C, categoryIcon } from '../theme';
+import { C, categoryIcon } from '../constants/theme';
 
 export function IconButton({ icon, onPress, color = C.purpleDark, background = C.purpleSoft, size = 22, label }) {
   return (
