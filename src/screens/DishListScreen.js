@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { getCategories, getDishes } from '../database/database';
+import { getOnlineCategories, getOnlineDishes } from '../services/mockApi';
 import { C, money } from '../theme';
 import { Button, Chip, DishPhoto, EmptyState } from '../components/Widgets';
 
@@ -10,6 +11,25 @@ export default function DishListScreen({ t, language, onToggleLanguage, filters,
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [onlineLoading, setOnlineLoading] = useState(false);
+
+  async function checkMockApi() {
+    if (onlineLoading) return;
+    setOnlineLoading(true);
+    try {
+      const [onlineDishes, onlineCategories] = await Promise.all([
+        getOnlineDishes(),
+        getOnlineCategories(),
+      ]);
+      Alert.alert('MockAPI', language === 'vi'
+        ? 'Kết nối thành công!\n' + onlineCategories.length + ' danh mục\n' + onlineDishes.length + ' món ăn'
+        : 'Connected!\n' + onlineCategories.length + ' categories\n' + onlineDishes.length + ' dishes');
+    } catch (e) {
+      Alert.alert('MockAPI', (language === 'vi' ? 'Không kết nối được: ' : 'Connection failed: ') + e.message);
+    } finally {
+      setOnlineLoading(false);
+    }
+  }
   const [error, setError] = useState('');
 
   async function load() {
@@ -94,6 +114,12 @@ export default function DishListScreen({ t, language, onToggleLanguage, filters,
       </View>
       <View style={s.actions}>
         <View style={{ flex: 1 }}><Button title={t('addDish')} icon="add-circle-outline" onPress={onAdd}/></View>
+        <Pressable onPress={checkMockApi} disabled={onlineLoading}
+          style={[s.categoryButton, { backgroundColor: C.blueSoft }]}
+          accessibilityLabel="Test MockAPI">
+          {onlineLoading ? <ActivityIndicator color={C.blueDark}/>
+            : <Ionicons name="cloud-outline" size={22} color={C.blueDark}/>}
+        </Pressable>
         <Pressable onPress={onCategories} style={s.categoryButton} accessibilityLabel={t('manageCategories')}>
           <Ionicons name="grid-outline" size={20} color={C.purpleDark}/>
         </Pressable>
