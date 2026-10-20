@@ -36,12 +36,13 @@ function parseImages(raw) {
       isThumbnail: booleanValue(i?.[P + 'IsThumbnail'] ?? i?.isThumbnail),
     }))
     .filter(i => /^https?:\/\//i.test(i.imageUrl));
-  let seen = false;
-  return mapped.map((i, index) => {
-    const isThumbnail = i.isThumbnail && !seen;
-    if (isThumbnail) seen = true;
-    return { imageUrl: i.imageUrl, isThumbnail: isThumbnail || (!seen && index === 0) };
-  });
+  // Luon co toi da MOT anh thumbnail theo unique index SQLite.
+  const marked = mapped.findIndex(i => i.isThumbnail);
+  const coverIndex = marked >= 0 ? marked : 0;
+  return mapped.map((i, index) => ({
+    imageUrl: i.imageUrl,
+    isThumbnail: index === coverIndex,
+  }));
 }
 
 async function ensureTracked(db) {
@@ -77,7 +78,8 @@ async function matchRemoteIds(db, entity, remoteRecords) {
     // Truoc tien tim bang ten (va loai voi mon), sau do ID du lieu mau.
     let matched = choices.find(r => normalize(readValue(r, 'Name', '')) === normalize(row.name)
       && (entity === 'category' || Number(readValue(r, 'DishCategoryId', -1)) === row.categoryId));
-    if (!matched) {
+    if (!matched && (entity === 'category' ? row.id <= 3 : row.id <= 5)) {
+      // Fallback ID chi ap dung cho 3 category/5 dish mau co san.
       matched = choices.find(r => Number(readValue(r, 'Id', -1)) === row.id);
     }
     if (!matched) continue;

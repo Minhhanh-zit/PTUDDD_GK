@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { getCategories, getDishes } from '../database/database';
 import { C } from '../constants/theme';
 import DishCard from '../components/DishCard';
 import { filterAndSortDishes, getPriceRangeFlags } from '../utils/dishFilters';
-import { Button, Chip, DishPhoto, EmptyState } from '../components/Widgets';
+import { Button, Chip, EmptyState } from '../components/Widgets';
 
 export default function DishListScreen({ t, language, onToggleLanguage, filters, setFilters,
   syncStatus, syncRevision, onDetail, onAdd, onCategories }) {
