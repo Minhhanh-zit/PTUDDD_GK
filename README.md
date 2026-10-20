@@ -1,51 +1,99 @@
-# BIT246755_FoodManager 🍽️
+# BIT246755 Food Manager 🍽️
 
-**Bài kiểm tra giữa kỳ | Phát triển ứng dụng di động | Quản lý món ăn**
+**Bài kiểm tra giữa kỳ | Học phần Phát triển ứng dụng di động**
 
-- **MSSV:** `BIT246755`
-- **Tên project:** `BIT246755_FoodManager`
-- **Công nghệ:** React Native (Expo), JavaScript, `expo-sqlite`, Ionicons
-- **Nền tảng demo:** iPhone thật qua Expo Go
-- **Mã nguồn:** [PTUDDD_GK](https://github.com/Minhhanh-zit/PTUDDD_GK)
-- **Video demo (YouTube):** [Xem video](https://youtu.be/j7YK3xQk-vM?si=wVQ0n46lM4q8uI-9)
-
-> **Đồng bộ nâng cao:** code hiện có cơ chế tự gửi thay đổi SQLite lên MockAPI khi app đang mở và kết nối được khôi phục (thử lại 12 giây/lần), đồng thời đọc cập nhật online về local. Cần **kiểm thử thực tế trên iPhone** trước khi xác nhận đủ 1,5 điểm. Không chạy đồng bộ nền khi ứng dụng đã bị tắt hoàn toàn.\n
-## 1. Tính năng
-
-- Danh sách, chi tiết, thêm, sửa, xóa món ăn (có hộp thoại xác nhận xóa).
-- Quản lý danh mục món ăn; không cho xóa danh mục khi đang có món tham chiếu.
-- Tìm theo một phần tên, lọc đồng thời theo danh mục, trạng thái đang bán, khoảng giá.
-- Sắp xếp theo giá tăng, giá giảm hoặc thời gian chế biến tăng; giữ bộ lọc khi chuyển màn hình.
-- Lưu nhiều URL ảnh cho mỗi món; chọn một ảnh đại diện.
-- Phân loại **Quick** (≤ 15 phút) và **Regular** (> 15 phút).
-- Validation: tên không rỗng, giá và thời gian > 0, danh mục hợp lệ, tên không trùng trong cùng danh mục.
-- Chuyển giao diện **English / Tiếng Việt**; ngôn ngữ được giữ khi điều hướng.
-- SQLite lưu trên điện thoại, không cần Internet để đọc/sửa dữ liệu văn bản; ảnh URL có thể cần Internet.
-- Biểu tượng đám mây hiển thị **trạng thái đồng bộ tự động**, không cần bấm nút; dữ liệu thay đổi khi offline được lưu SQLite và thử lại khi có Internet.
-
-## 2. Dữ liệu & tiền tố MSSV
-
-Đối tượng nghiệp vụ chính:
-
-- `DishCategory`: Id, Name, Description.
-- `Dish`: Id, Name, Price, PreparationTime, IsAvailable, Description, DishCategoryId, DishImage.
-
-SQLite: `BIT246755_FoodManager.db`; các bảng:
-
-| Tên bảng | Công dụng |
+| Thông tin | Nội dung |
 |---|---|
-| `BIT246755_DishCategory` | Danh mục món ăn |
-| `BIT246755_Dish` | Thông tin món ăn |
-| `BIT246755_DishImage` | Danh sách ảnh/ảnh đại diện theo món |
-| `BIT246755_AppSetting` | Cờ khởi tạo dữ liệu mẫu |\n| `BIT246755_SyncState` | Liên kết local/remote ID, phiên bản và thay đổi đang chờ |
+| Mã sinh viên | **BIT246755** |
+| Tên ứng dụng | **Food Manager** |
+| Repository | [Minhhanh-zit/PTUDDD_GK](https://github.com/Minhhanh-zit/PTUDDD_GK) |
+| Công nghệ | React Native, Expo SDK 57, JavaScript, SQLite, MockAPI |
+| Thiết bị đã chạy | iPhone với Expo Go |
+| Video demo hiện có | [Xem trên YouTube](https://youtu.be/j7YK3xQk-vM?si=wVQ0n46lM4q8uI-9) |
 
-Tên trường lưu trữ SQLite cũng dùng tiền tố `BIT246755_`, ví dụ `BIT246755_Name`, `BIT246755_Price`, `BIT246755_DishCategoryId`.
+> **Trạng thái chốt code ngày 20/10/2026:** Người làm đã kiểm thử thành công **một tình huống** sửa dữ liệu khi offline, lưu thay đổi vào SQLite, bật mạng trở lại và xác nhận dữ liệu mới đã xuất hiện trên MockAPI. Ứng dụng hiển thị `MockAPI connected` và không còn thay đổi chờ gửi. Các tình huống phức tạp hơn vẫn có giới hạn, trình bày cuối tài liệu.
 
-**Dữ liệu mẫu:** 3 danh mục (Main Course, Drinks, Desserts), 5 món (Chicken Rice, Beef Noodles, Orange Juice, Iced Tea, Chocolate Cake).
+## 1. Chức năng
 
-## 3. Cài đặt và chạy
+### Quản lý món ăn và danh mục
 
-Yêu cầu Node.js, npm và Expo Go tương thích phiên bản Expo SDK được khai báo trong `package.json`.
+- Xem danh sách món, mở chi tiết, thêm, sửa, xóa món; có xác nhận khi xóa.
+- Quản lý loại món ăn, không cho xóa loại đang có món sử dụng.
+- Lưu tên, giá tiền (VND), thời gian chế biến, trạng thái còn bán, mô tả, loại món.
+- Mỗi món hỗ trợ nhiều URL hình ảnh và lựa chọn một ảnh đại diện.
+- Phân nhóm theo thời gian: **Quick** (≤ 15 phút), **Regular** (> 15 phút).
+- Kiểm tra dữ liệu đầu vào: tên bắt buộc; giá và thời gian dương; thời gian là số nguyên; tên món không được trùng trong cùng loại.
+
+### Tìm kiếm và trải nghiệm
+
+- Tìm kiếm gần đúng theo tên.
+- Lọc kết hợp: loại món, trạng thái còn bán, khoảng giá.
+- Sắp xếp: giá tăng, giá giảm, thời gian chế biến tăng.
+- Giữ điều kiện tìm kiếm/lọc khi chuyển qua màn hình chi tiết rồi quay lại.
+- Đổi giao diện **English / Tiếng Việt**.
+- Giao diện xanh tím pastel, có biểu tượng và bố cục tương thích vùng an toàn iPhone.
+
+### Lưu trữ và đồng bộ
+
+- **SQLite:** nguồn dữ liệu local, vẫn đọc và chỉnh sửa được khi mất mạng.
+- **MockAPI:** nơi lưu dữ liệu online để đồng bộ.
+- **Tự đồng bộ khi app đang mở:** sau thao tác CRUD, lúc app trở lại trạng thái active và mỗi khoảng **12 giây**, chương trình thử gửi dữ liệu đang chờ khi có Internet.
+- Thao tác local được ghi nhận bằng bảng `BIT246755_SyncState`, gồm ID local, ID online, trạng thái chờ, đánh dấu đã xóa và revision.
+- Biểu tượng đám mây chỉ **hiển thị trạng thái tự đồng bộ**, không cần bấm nút để gửi dữ liệu.
+
+## 2. Cấu trúc dự án
+
+```text
+PTUDDD_GK/
+├── App.js                            Điều hướng và khởi tạo
+├── index.js                          Điểm vào ứng dụng
+├── app.json                          Cấu hình Expo
+├── package.json                      Thư viện và lệnh chạy
+├── assets/                           Icon và tài nguyên mặc định
+├── src/
+│   ├── components/
+│   │   ├── DishCard.js               Thẻ hiển thị một món ăn
+│   │   └── Widgets.js                UI dùng lại
+│   ├── constants/
+│   │   └── theme.js                  Bảng màu, format tiền, icon
+│   ├── database/
+│   │   └── database.js               SQLite, dữ liệu mẫu, CRUD, outbox
+│   ├── locales/
+│   │   └── translations.js           Từ điển EN/VI
+│   ├── screens/
+│   │   ├── DishListScreen.js         Danh sách, tìm/lọc/sắp xếp
+│   │   ├── DishDetailScreen.js       Thông tin món ăn
+│   │   ├── DishFormScreen.js         Form thêm và sửa món
+│   │   └── CategoryScreen.js         Quản lý danh mục
+│   ├── services/
+│   │   ├── mockApi.js                HTTP GET/POST/PUT/DELETE
+│   │   └── autoSync.js               Đồng bộ local ↔ online
+│   └── utils/
+│       └── dishFilters.js            Xử lý lọc và sắp xếp
+├── video/
+│   └── demo_foodmanager.mp4          Bản demo được lưu trong repo
+└── README.md
+```
+
+## 3. Cơ sở dữ liệu SQLite
+
+Tên database: `BIT246755_FoodManager.db`.
+
+| Bảng | Công dụng |
+|---|---|
+| `BIT246755_DishCategory` | Danh mục món |
+| `BIT246755_Dish` | Thông tin món; khóa ngoại đến danh mục |
+| `BIT246755_DishImage` | Danh sách hình, lựa chọn thumbnail |
+| `BIT246755_AppSetting` | Cờ khởi tạo ảnh mẫu một lần |
+| `BIT246755_SyncState` | Theo dõi mapping ID local/online và thay đổi chờ gửi |
+
+Tên bảng và các cột SQLite đều có tiền tố **`BIT246755_`**, ví dụ `BIT246755_Name`, `BIT246755_Price`, `BIT246755_DishCategoryId`.
+
+Dữ liệu ban đầu: **3 danh mục** (`Main Course`, `Drinks`, `Desserts`) và **5 món mẫu** (`Chicken Rice`, `Beef Noodles`, `Orange Juice`, `Iced Tea`, `Chocolate Cake`). Dữ liệu được tạo khi khởi tạo DB mới, không xóa dữ liệu SQLite đã lưu ở những lần khởi động sau.
+
+## 4. Cài đặt và chạy bằng Expo Go
+
+Cần Node.js, npm và Expo Go phiên bản tương thích SDK 57.
 
 ```bash
 git clone https://github.com/Minhhanh-zit/PTUDDD_GK.git
@@ -54,73 +102,59 @@ npm install
 npx expo start -c
 ```
 
-Quét QR trong Expo Go trên iPhone. Khi chạy lần đầu, app sẽ khởi tạo SQLite và dữ liệu mẫu nếu chưa có danh mục.
+Mở Expo Go trên iPhone và quét QR của Metro Bundler. Nếu kết nối LAN không dùng được, có thể thử `npx expo start --tunnel`. Không cần Xcode để kiểm thử trên iPhone thật qua Expo Go.
 
-## 4. Cấu trúc mã nguồn
+## 5. MockAPI và cơ chế đồng bộ
 
-```text
-App.js                         Điều hướng màn hình, trạng thái bộ lọc/ngôn ngữ
-src/database/database.js       Khởi tạo SQLite, CRUD, kiểm tra ràng buộc
-src/screens/DishListScreen.js  Danh sách, bộ lọc và trạng thái auto-sync
-src/screens/DishDetailScreen.js Chi tiết, nhiều ảnh, xác nhận xóa
-src/screens/DishFormScreen.js  Form thêm/sửa, validation, thay ảnh đại diện
-src/screens/CategoryScreen.js  Quản lý loại món ăn
-src/services/mockApi.js        Hàm HTTP kết nối MockAPI\nsrc/services/autoSync.js       Đồng bộ hai chiều khi app đang mở, retry tự động
-src/components/DishCard.js     Thẻ món ăn, tách riêng khỏi màn hình danh sách
-src/components/Widgets.js      Thành phần UI dùng lại
-src/utils/dishFilters.js       Logic lọc nhiều điều kiện và sắp xếp
-src/constants/theme.js         Màu pastel xanh/tím, hiển thị tiền và icon danh mục
-src/locales/translations.js    Bản dịch English/Tiếng Việt
+**Endpoint:**
 
-```
+- [`BIT246755_DishCategory`](https://6ad61022f71f154ac4866450.mockapi.io/BIT246755_DishCategory)
+- [`BIT246755_Dish`](https://6ad61022f71f154ac4866450.mockapi.io/BIT246755_Dish)
 
-> Các hàm POST/PUT/DELETE trong `mockApi.js` là lớp dịch vụ đã khai báo, **chưa tự động được gọi trong quy trình CRUD local**.
+MockAPI của bài sử dụng khóa chính **`BIT246755_Id` (Object ID)**. Giá trị ID ở API phải được lưu ở dạng chuỗi, ví dụ `"1"`, để thao tác `GET /resource/1` hoạt động. Trước khi đồng bộ, chương trình kiểm tra endpoint truy cập từng bản ghi để tránh ghi nhầm hoặc tạo trùng khi cấu hình API không đúng.
 
-## 5. Test nhanh trên iPhone
+**Luồng đồng bộ khi ứng dụng đang mở:**
 
-1. Danh sách hiển thị ít nhất 3 danh mục và 5 món mẫu.
-2. Tìm `Chicken`; lọc `Drinks`, `Available only`; thử khoảng giá và sắp xếp.
-3. Mở chi tiết rồi trở về; các bộ lọc vẫn giữ.
-4. Thêm món mới, sửa, xóa, thử nhập sai và tên trùng cùng danh mục.
-5. Thêm 2 URL ảnh rồi đổi ảnh đại diện.
-6. Thử xóa danh mục đang có món để kiểm tra ràng buộc.
-7. Đổi EN ↔ VI trên các màn hình.
-8. Tắt Internet, sửa dữ liệu local rồi mở lại để kiểm tra SQLite.
-9. Bật Internet, bấm nút đám mây để kiểm tra **kết nối** MockAPI, không phải đồng bộ.
+1. Người dùng thao tác CRUD; dữ liệu được ghi vào SQLite.
+2. Nếu offline, thông tin thay đổi vẫn nằm trong `BIT246755_SyncState` với trạng thái pending.
+3. Khi có mạng trở lại, `autoSync.js` đọc dữ liệu online, ghép ID phù hợp và gửi các bản ghi đang chờ.
+4. Khi API xác nhận và revision không đổi, chương trình đánh dấu đã đồng bộ.
+5. Ứng dụng có thể đọc dữ liệu online về local đối với những bản ghi không có thay đổi local đang chờ.
 
-## 6. Video và nộp bài
+**Phạm vi:** Đồng bộ khi app hoạt động ở foreground; **không** bảo đảm đồng bộ nền sau khi app bị đóng hẳn. Quy tắc xử lý xung đột đơn giản: ưu tiên thay đổi local đang chờ. Hệ thống chưa được kiểm chứng đầy đủ với sửa/xóa đồng thời từ nhiều thiết bị hoặc các tình huống mất phản hồi ngay sau POST.
 
-🎬 **[Xem video demo trên YouTube](https://youtu.be/j7YK3xQk-vM?si=wVQ0n46lM4q8uI-9)**
+## 6. Kết quả kiểm thử đã xác nhận
 
-Theo đề giữa kỳ, cần **hai video khác nhau**:
-- **Video 1:** quay màn hình chạy ứng dụng, demo MSSV, danh sách, CRUD, lọc, ảnh và ngôn ngữ; nộp trong ca kiểm tra.
-- **Video 2:** **thuyết minh bằng lời** về cấu trúc mã nguồn, model/quan hệ, SQLite, chức năng chính, validation, đa ngôn ngữ, và các đoạn code có tiền tố MSSV; hạn **23/10/2026**.
+| Trường hợp | Kết quả |
+|---|---|
+| Giao diện trên iPhone hiển thị 5 món | Đã quan sát |
+| GET theo ID của 3 danh mục và 5 món trên MockAPI | **8/8 HTTP 200** |
+| Khi offline, dữ liệu local vẫn hiển thị | Đã quan sát |
+| Khi offline, có 1 thay đổi đang chờ đồng bộ | Đã quan sát |
+| Bật mạng lại, trạng thái chuyển thành `MockAPI connected` và không còn pending | Đã quan sát |
+| Người làm đối chiếu và xác nhận thay đổi đã lên MockAPI | **Đã xác nhận** |
 
-Đường dẫn YouTube ở trên là video demo được cung cấp cho dự án. Cần đối chiếu nội dung video với yêu cầu Video 1/Video 2 và **nộp lên LMS theo đúng quy định**. Việc có link YouTube hoặc GitHub không đồng nghĩa đã nộp video lên LMS.
+Bảng trên ghi lại **những tình huống đã được thực hiện và xác nhận**, không phải kết quả của một bộ kiểm thử tự động toàn diện.
 
-## 7. MockAPI (đang phát triển)
+### Các bước kiểm tra lại trước khi nộp
 
-- `https://6ad61022f71f154ac4866450.mockapi.io/BIT246755_DishCategory`
-- `https://6ad61022f71f154ac4866450.mockapi.io/BIT246755_Dish`
+1. Thêm, sửa, xóa một món và kiểm tra dữ liệu sau khi khởi động lại ứng dụng.
+2. Kiểm tra lọc đồng thời, sắp xếp, validation, đổi ngôn ngữ, nhiều ảnh và thumbnail.
+3. Tắt mạng rồi sửa một món mẫu; xác nhận local thay đổi và pending tăng.
+4. Bật mạng, giữ app đang mở; xác nhận pending giảm về 0 và đối chiếu dữ liệu thực trên MockAPI.
+5. Kiểm tra số danh mục và số món không phát sinh bản ghi trùng.
 
-Có cơ chế `autoSync`: ứng dụng tự đọc MockAPI và xử lý các thay đổi lưu ở bảng `BIT246755_SyncState`. Trường `BIT246755_Revision` tránh đánh dấu đã đồng bộ nếu bản ghi được sửa tiếp trong lúc gửi. Mapping `BIT246755_RemoteId` hạn chế tạo trùng khi thử lại.
+## 7. Video và nộp bài
 
-**Phạm vi demo:** tự đồng bộ khi ứng dụng ở foreground; không có background sync khi người dùng đóng hẳn app. Lần đầu, các món có sẵn được ghép theo tên hoặc ID mẫu nhằm tránh tạo trùng. Chính sách xung đột: nếu local còn thay đổi chưa đẩy, ưu tiên local; nếu local sạch, nhận bản online. Các xung đột phức tạp nhiều thiết bị hoặc MockAPI lưu sai kiểu `DishImage` chưa có bảo đảm nhất quán hoàn toàn, cần thử trên thiết bị thật.
+🎬 **[Video demo Food Manager trên YouTube](https://youtu.be/j7YK3xQk-vM?si=wVQ0n46lM4q8uI-9)**
 
-## 8. Tổ chức mã nguồn
+- **Video 1:** Demo giao diện và thao tác ứng dụng. Có video được liên kết ở trên; cần đối chiếu nội dung với yêu cầu của giảng viên.
+- **Video 2:** Thuyết minh cấu trúc và code (SQLite, CRUD, validation, đa ngôn ngữ, đồng bộ). **Chưa thực hiện trong bước chốt code này.** Hạn của Video 2 theo đề: **23/10/2026**.
 
-- `src/screens/`: các màn hình và tương tác của người dùng.
-- `src/components/`: thành phần UI dùng lại, gồm `DishCard` và `Widgets`.
-- `src/database/`: SQLite, CRUD và ràng buộc dữ liệu.
-- `src/services/`: các hàm HTTP kết nối MockAPI.
-- `src/utils/`: logic lọc và sắp xếp tách khỏi giao diện.
-- `src/constants/`: giao diện màu sắc và các hàm hiển thị.
-- `src/locales/`: từ điển English/Tiếng Việt.
+Lưu ý: Có video trên GitHub/YouTube **không đồng nghĩa đã nộp lên LMS**. Thực hiện nộp file hoặc đường dẫn đúng yêu cầu của giảng viên.
 
-Đã gộp tài liệu cũ `README_BAI_CO_BAN.md` vào README chính để không gây nhầm lẫn. Đây chỉ là lần sắp xếp mã nguồn, chưa bổ sung chức năng tự đồng bộ.
+## 8. Tình trạng bản chốt
 
-## 9. Lưu ý cấu hình MockAPI hiện tại (20/10/2026)
+Bản code được giữ nguyên theo commit đã có kết quả chạy thành công trên iPhone; phần cập nhật README này chỉ sửa tài liệu. Trước khi chạy code mới nhất trên Mac, kiểm tra `git status` và `git pull`.
 
-GET danh sách `BIT246755_DishCategory` thành công, nhưng GET theo ID `/BIT246755_DishCategory/1` đến `/4` trả 404. Danh sách có 23 mục do các POST trước đó bị lặp; 5 món online chỉ tham chiếu các danh mục 1, 2, 3. **Chưa được phép đánh giá đồng bộ online là hoạt động ổn định.**
-
-Đã thêm kiểm tra GET bản ghi đơn lẻ **trước tất cả thao tác ghi**; nếu API không cho truy cập theo ID, app dừng phần upload với lỗi rõ ràng để không tiếp tục tạo dữ liệu trùng. Cần kiểm tra khóa chính và GET/PUT/DELETE cho từng resource trên dashboard MockAPI rồi thử lại. Giữ nguyên SQLite trên iPhone; chưa xóa các danh mục dư.
+Không đưa `node_modules/`, `.expo/`, dữ liệu SQLite cá nhân hay file backup lên repository.
