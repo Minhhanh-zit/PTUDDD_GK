@@ -9,6 +9,32 @@ const openDb = () => {
   return databasePromise;
 };
 
+// Thay doi local -> tu dong kich hoat kiem tra dong bo.
+const localChangeListeners = new Set();
+export function subscribeLocalChanges(listener) {
+  localChangeListeners.add(listener);
+  return () => localChangeListeners.delete(listener);
+}
+function notifyLocalChange() {
+  for (const listener of localChangeListeners) {
+    try { listener(); } catch (error) { console.warn('Sync listener:', error); }
+  }
+}
+export async function getSyncDatabase() { return openDb(); }
+
+// Ghi outbox ngay trong transaction CRUD, dam bao thay doi offline khong bi mat.
+async function markDirty(tx, entity, id, deleted = false) {
+  await tx.runAsync(`INSERT INTO "BIT246755_SyncState" (
+    "BIT246755_Entity", "BIT246755_LocalId", "BIT246755_Pending",
+    "BIT246755_Deleted", "BIT246755_Revision"
+  ) VALUES (?, ?, 1, ?, 1)
+  ON CONFLICT ("BIT246755_Entity", "BIT246755_LocalId") DO UPDATE SET
+    "BIT246755_Pending" = 1,
+    "BIT246755_Deleted" = excluded."BIT246755_Deleted",
+    "BIT246755_Revision" = "BIT246755_Revision" + 1`,
+    [entity, id, deleted ? 1 : 0]);
+}
+
 const photoSamples = {
   'Chicken Rice': [
     'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=900',
@@ -55,6 +81,18 @@ export async function initDatabase() {
       "BIT246755_Key" TEXT PRIMARY KEY,
       "BIT246755_Value" TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS "BIT246755_SyncState" (
+      "BIT246755_Entity" TEXT NOT NULL CHECK ("BIT246755_Entity" IN ('category', 'dish')),
+      "BIT246755_LocalId" INTEGER NOT NULL,
+      "BIT246755_RemoteId" TEXT,
+      "BIT246755_Pending" INTEGER NOT NULL DEFAULT 0,
+      "BIT246755_Deleted" INTEGER NOT NULL DEFAULT 0,
+      "BIT246755_Revision" INTEGER NOT NULL DEFAULT 0,
+      PRIMARY KEY ("BIT246755_Entity", "BIT246755_LocalId")
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS "BIT246755_SyncRemoteUnique"
+      ON "BIT246755_SyncState" ("BIT246755_Entity", "BIT246755_RemoteId")
+      WHERE "BIT246755_RemoteId" IS NOT NULL;
   `);
 
   await db.withExclusiveTransactionAsync(async (tx) => {
@@ -172,36 +210,55 @@ export async function saveDish(data, editingId = null) {
         "BIT246755_DishId", "BIT246755_ImageUrl", "BIT246755_IsThumbnail") VALUES (?, ?, ?)`,
       [resultId, data.images[i].imageUrl, i === data.thumbnailIndex ? 1 : 0]);
     }
+    await markDirty(tx, 'dish', resultId);
   });
+  notifyLocalChange();
   return resultId;
 }
 
 export async function deleteDish(id) {
   const db = await openDb();
-  const r = await db.runAsync(`DELETE FROM "${T.dish}" WHERE "BIT246755_Id" = ?`, [id]);
-  if (!r.changes) throw new Error('missingDish');
+  await db.withExclusiveTransactionAsync(async (tx) => {
+    const r = await tx.runAsync(`DELETE FROM "${T.dish}" WHERE "BIT246755_Id" = ?`, [id]);
+    if (!r.changes) throw new Error('missingDish');
+    await markDirty(tx, 'dish', id, true);
+  });
+  notifyLocalChange();
 }
 
 export async function saveCategory(name, description, editingId = null) {
   const db = await openDb();
-  const already = await db.getFirstAsync(`SELECT "BIT246755_Id" AS id FROM "${T.category}"
-    WHERE lower(trim("BIT246755_Name")) = lower(trim(?)) AND (? IS NULL OR "BIT246755_Id" != ?)`,
-  [name, editingId, editingId]);
-  if (already) throw new Error('categoryDuplicate');
-  if (editingId != null) {
-    const r = await db.runAsync(`UPDATE "${T.category}" SET "BIT246755_Name"=?, "BIT246755_Description"=? WHERE "BIT246755_Id"=?`,
-    [name, description, editingId]);
-    if (!r.changes) throw new Error('missingCategory');
-    return editingId;
-  }
-  const r = await db.runAsync(`INSERT INTO "${T.category}" ("BIT246755_Name", "BIT246755_Description") VALUES (?, ?)`, [name, description]);
-  return r.lastInsertRowId;
+  let resultId = editingId;
+  await db.withExclusiveTransactionAsync(async (tx) => {
+    const already = await tx.getFirstAsync(`SELECT "BIT246755_Id" AS id FROM "${T.category}"
+      WHERE lower(trim("BIT246755_Name")) = lower(trim(?))
+        AND (? IS NULL OR "BIT246755_Id" != ?)`, [name, editingId, editingId]);
+    if (already) throw new Error('categoryDuplicate');
+    if (editingId != null) {
+      const r = await tx.runAsync(`UPDATE "${T.category}"
+        SET "BIT246755_Name"=?, "BIT246755_Description"=?
+        WHERE "BIT246755_Id"=?`, [name, description, editingId]);
+      if (!r.changes) throw new Error('missingCategory');
+    } else {
+      const r = await tx.runAsync(`INSERT INTO "${T.category}"
+        ("BIT246755_Name", "BIT246755_Description") VALUES (?, ?)`, [name, description]);
+      resultId = r.lastInsertRowId;
+    }
+    await markDirty(tx, 'category', resultId);
+  });
+  notifyLocalChange();
+  return resultId;
 }
 
 export async function deleteCategory(id) {
   const db = await openDb();
-  const c = await db.getFirstAsync(`SELECT COUNT(*) AS n FROM "${T.dish}" WHERE "BIT246755_DishCategoryId"=?`, [id]);
-  if (c.n > 0) throw new Error('categoryUsed');
-  const r = await db.runAsync(`DELETE FROM "${T.category}" WHERE "BIT246755_Id"=?`, [id]);
-  if (!r.changes) throw new Error('missingCategory');
+  await db.withExclusiveTransactionAsync(async (tx) => {
+    const c = await tx.getFirstAsync(`SELECT COUNT(*) AS n FROM "${T.dish}"
+      WHERE "BIT246755_DishCategoryId"=?`, [id]);
+    if (c.n > 0) throw new Error('categoryUsed');
+    const r = await tx.runAsync(`DELETE FROM "${T.category}" WHERE "BIT246755_Id"=?`, [id]);
+    if (!r.changes) throw new Error('missingCategory');
+    await markDirty(tx, 'category', id, true);
+  });
+  notifyLocalChange();
 }

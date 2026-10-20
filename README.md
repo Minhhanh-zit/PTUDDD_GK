@@ -9,8 +9,7 @@
 - **Mã nguồn:** [PTUDDD_GK](https://github.com/Minhhanh-zit/PTUDDD_GK)
 - **Video demo (YouTube):** [Xem video](https://youtu.be/j7YK3xQk-vM?si=wVQ0n46lM4q8uI-9)
 
-> **Phạm vi hiện tại:** CRUD và các yêu cầu cơ bản lưu trong SQLite. Có kết nối GET tới MockAPI để kiểm tra số lượng bản ghi online. **Chưa triển khai tự động đồng bộ hai chiều khi mất/có mạng trở lại.** Không nên nhầm nút kiểm tra API với chức năng đồng bộ nâng cao.
-
+> **Đồng bộ nâng cao:** code hiện có cơ chế tự gửi thay đổi SQLite lên MockAPI khi app đang mở và kết nối được khôi phục (thử lại 12 giây/lần), đồng thời đọc cập nhật online về local. Cần **kiểm thử thực tế trên iPhone** trước khi xác nhận đủ 1,5 điểm. Không chạy đồng bộ nền khi ứng dụng đã bị tắt hoàn toàn.\n
 ## 1. Tính năng
 
 - Danh sách, chi tiết, thêm, sửa, xóa món ăn (có hộp thoại xác nhận xóa).
@@ -22,7 +21,7 @@
 - Validation: tên không rỗng, giá và thời gian > 0, danh mục hợp lệ, tên không trùng trong cùng danh mục.
 - Chuyển giao diện **English / Tiếng Việt**; ngôn ngữ được giữ khi điều hướng.
 - SQLite lưu trên điện thoại, không cần Internet để đọc/sửa dữ liệu văn bản; ảnh URL có thể cần Internet.
-- Nút biểu tượng đám mây dùng **kiểm tra** kết nối GET tới MockAPI và hiện số lượng món/danh mục.
+- Biểu tượng đám mây hiển thị **trạng thái đồng bộ tự động**, không cần bấm nút; dữ liệu thay đổi khi offline được lưu SQLite và thử lại khi có Internet.
 
 ## 2. Dữ liệu & tiền tố MSSV
 
@@ -38,7 +37,7 @@ SQLite: `BIT246755_FoodManager.db`; các bảng:
 | `BIT246755_DishCategory` | Danh mục món ăn |
 | `BIT246755_Dish` | Thông tin món ăn |
 | `BIT246755_DishImage` | Danh sách ảnh/ảnh đại diện theo món |
-| `BIT246755_AppSetting` | Cờ khởi tạo dữ liệu mẫu |
+| `BIT246755_AppSetting` | Cờ khởi tạo dữ liệu mẫu |\n| `BIT246755_SyncState` | Liên kết local/remote ID, phiên bản và thay đổi đang chờ |
 
 Tên trường lưu trữ SQLite cũng dùng tiền tố `BIT246755_`, ví dụ `BIT246755_Name`, `BIT246755_Price`, `BIT246755_DishCategoryId`.
 
@@ -62,11 +61,11 @@ Quét QR trong Expo Go trên iPhone. Khi chạy lần đầu, app sẽ khởi t�
 ```text
 App.js                         Điều hướng màn hình, trạng thái bộ lọc/ngôn ngữ
 src/database/database.js       Khởi tạo SQLite, CRUD, kiểm tra ràng buộc
-src/screens/DishListScreen.js  Danh sách, tìm kiếm, các bộ lọc và nút kiểm tra MockAPI
+src/screens/DishListScreen.js  Danh sách, bộ lọc và trạng thái auto-sync
 src/screens/DishDetailScreen.js Chi tiết, nhiều ảnh, xác nhận xóa
 src/screens/DishFormScreen.js  Form thêm/sửa, validation, thay ảnh đại diện
 src/screens/CategoryScreen.js  Quản lý loại món ăn
-src/services/mockApi.js        Hàm GET/POST/PUT/DELETE đến MockAPI
+src/services/mockApi.js        Hàm HTTP kết nối MockAPI\nsrc/services/autoSync.js       Đồng bộ hai chiều khi app đang mở, retry tự động
 src/components/DishCard.js     Thẻ món ăn, tách riêng khỏi màn hình danh sách
 src/components/Widgets.js      Thành phần UI dùng lại
 src/utils/dishFilters.js       Logic lọc nhiều điều kiện và sắp xếp
@@ -104,7 +103,9 @@ Theo đề giữa kỳ, cần **hai video khác nhau**:
 - `https://6ad61022f71f154ac4866450.mockapi.io/BIT246755_DishCategory`
 - `https://6ad61022f71f154ac4866450.mockapi.io/BIT246755_Dish`
 
-Hiện có nút gọi hai endpoint GET để kiểm tra số bản ghi online. Phần **offline thay đổi → phát hiện có mạng trở lại → tự đồng bộ lên MockAPI, tránh trùng** là yêu cầu nâng cao **chưa hoàn thành**.
+Có cơ chế `autoSync`: ứng dụng tự đọc MockAPI và xử lý các thay đổi lưu ở bảng `BIT246755_SyncState`. Trường `BIT246755_Revision` tránh đánh dấu đã đồng bộ nếu bản ghi được sửa tiếp trong lúc gửi. Mapping `BIT246755_RemoteId` hạn chế tạo trùng khi thử lại.
+
+**Phạm vi demo:** tự đồng bộ khi ứng dụng ở foreground; không có background sync khi người dùng đóng hẳn app. Lần đầu, các món có sẵn được ghép theo tên hoặc ID mẫu nhằm tránh tạo trùng. Chính sách xung đột: nếu local còn thay đổi chưa đẩy, ưu tiên local; nếu local sạch, nhận bản online. Các xung đột phức tạp nhiều thiết bị hoặc MockAPI lưu sai kiểu `DishImage` chưa có bảo đảm nhất quán hoàn toàn, cần thử trên thiết bị thật.
 
 ## 8. Tổ chức mã nguồn
 

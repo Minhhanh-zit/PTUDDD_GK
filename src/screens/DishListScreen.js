@@ -2,36 +2,17 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { getCategories, getDishes } from '../database/database';
-import { getOnlineCategories, getOnlineDishes } from '../services/mockApi';
 import { C } from '../constants/theme';
 import DishCard from '../components/DishCard';
 import { filterAndSortDishes, getPriceRangeFlags } from '../utils/dishFilters';
 import { Button, Chip, DishPhoto, EmptyState } from '../components/Widgets';
 
-export default function DishListScreen({ t, language, onToggleLanguage, filters, setFilters, onDetail, onAdd, onCategories }) {
+export default function DishListScreen({ t, language, onToggleLanguage, filters, setFilters,
+  syncStatus, syncRevision, onDetail, onAdd, onCategories }) {
   const [dishes, setDishes] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [onlineLoading, setOnlineLoading] = useState(false);
-
-  async function checkMockApi() {
-    if (onlineLoading) return;
-    setOnlineLoading(true);
-    try {
-      const [onlineDishes, onlineCategories] = await Promise.all([
-        getOnlineDishes(),
-        getOnlineCategories(),
-      ]);
-      Alert.alert('MockAPI', language === 'vi'
-        ? 'Kết nối thành công!\n' + onlineCategories.length + ' danh mục\n' + onlineDishes.length + ' món ăn'
-        : 'Connected!\n' + onlineCategories.length + ' categories\n' + onlineDishes.length + ' dishes');
-    } catch (e) {
-      Alert.alert('MockAPI', (language === 'vi' ? 'Không kết nối được: ' : 'Connection failed: ') + e.message);
-    } finally {
-      setOnlineLoading(false);
-    }
-  }
   const [error, setError] = useState('');
 
   async function load() {
@@ -47,6 +28,12 @@ export default function DishListScreen({ t, language, onToggleLanguage, filters,
       .finally(() => { if (live) setLoading(false); });
     return () => { live = false; };
   }, []);
+
+  useEffect(() => {
+    if (syncRevision) {
+      load().catch(e => setError(e.message || 'dbError'));
+    }
+  }, [syncRevision]);
 
   async function refresh() {
     setRefreshing(true);
@@ -78,16 +65,26 @@ export default function DishListScreen({ t, language, onToggleLanguage, filters,
       </View>
       <View style={s.actions}>
         <View style={{ flex: 1 }}><Button title={t('addDish')} icon="add-circle-outline" onPress={onAdd}/></View>
-        <Pressable onPress={checkMockApi} disabled={onlineLoading}
-          style={[s.categoryButton, { backgroundColor: C.blueSoft }]}
-          accessibilityLabel="Test MockAPI">
-          {onlineLoading ? <ActivityIndicator color={C.blueDark}/>
-            : <Ionicons name="cloud-outline" size={22} color={C.blueDark}/>}
-        </Pressable>
+        <View style={[s.categoryButton, { backgroundColor: C.blueSoft }]}
+          accessibilityLabel="Automatic cloud synchronization status">
+          {syncStatus?.phase === 'syncing'
+            ? <ActivityIndicator color={C.blueDark}/>
+            : <Ionicons
+                name={syncStatus?.phase === 'online' ? 'cloud-done-outline' : 'cloud-offline-outline'}
+                size={22} color={syncStatus?.phase === 'online' ? C.success : C.blueDark}/>}
+        </View>
         <Pressable onPress={onCategories} style={s.categoryButton} accessibilityLabel={t('manageCategories')}>
           <Ionicons name="grid-outline" size={20} color={C.purpleDark}/>
         </Pressable>
       </View>
+      <Text style={s.syncText}>
+        {syncStatus?.phase === 'online' ? (language === 'vi' ? 'Đã kết nối MockAPI' : 'MockAPI connected')
+          : syncStatus?.phase === 'syncing' ? (language === 'vi' ? 'Đang đồng bộ tự động...' : 'Syncing automatically...')
+          : syncStatus?.phase === 'offline' ? (language === 'vi' ? 'Offline: dữ liệu vẫn lưu trên máy' : 'Offline: changes saved locally')
+          : syncStatus?.phase === 'error' ? (language === 'vi' ? 'Lỗi đồng bộ, sẽ thử lại' : 'Sync error, retrying')
+          : (language === 'vi' ? 'Đang kiểm tra mạng...' : 'Checking connection...')}
+        {syncStatus?.pending > 0 ? ` · ${syncStatus.pending} ${language === 'vi' ? 'thay đổi chờ gửi' : 'pending changes'}` : ''}
+      </Text>
       <View style={s.search}><Ionicons name="search-outline" size={21} color={C.blueDark}/>
         <TextInput style={s.searchInput} value={filters.search} onChangeText={search => update({ search })}
           placeholder={t('search')} placeholderTextColor={C.muted}/>
@@ -150,6 +147,7 @@ const s = StyleSheet.create({
   actions: { flexDirection: 'row', gap: 10, marginBottom: 17 },
   categoryButton: { width: 50, borderRadius: 15, backgroundColor: C.purpleSoft,
     alignItems: 'center', justifyContent: 'center' },
+  syncText: { color: C.blueDark, fontSize: 11, marginTop: -7, marginBottom: 12, marginLeft: 4 },
   search: { backgroundColor: C.white, borderRadius: 18, height: 53, borderWidth: 1,
     borderColor: C.border, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, gap: 10, marginBottom: 20 },
   searchInput: { flex: 1, color: C.text, fontSize: 14 },

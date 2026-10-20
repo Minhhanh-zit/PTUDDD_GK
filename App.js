@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, AppState, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { initDatabase } from './src/database/database';
+import { initDatabase, subscribeLocalChanges } from './src/database/database';
+import { syncNow } from './src/services/autoSync';
 import { C } from './src/constants/theme';
 import { translations } from './src/locales/translations';
 import DishListScreen from './src/screens/DishListScreen';
@@ -13,6 +14,8 @@ import CategoryScreen from './src/screens/CategoryScreen';
 export default function App() {
   const [ready, setReady] = useState(false);
   const [startupError, setStartupError] = useState('');
+  const [syncStatus, setSyncStatus] = useState({ phase: 'waiting', pending: 0 });
+  const [syncRevision, setSyncRevision] = useState(0);
   const [language, setLanguage] = useState('en');
   const [screen, setScreen] = useState('list');
   const [selectedId, setSelectedId] = useState(null);
@@ -29,6 +32,33 @@ export default function App() {
     return () => { live = false; };
   }, []);
 
+  useEffect(() => {
+    if (!ready || startupError) return;
+    let live = true;
+    const run = async () => {
+      if (AppState.currentState === 'background') return;
+      if (live) setSyncStatus(s => ({ ...s, phase: 'syncing' }));
+      const result = await syncNow();
+      if (live) {
+        setSyncStatus(result);
+        if (result.changed) setSyncRevision(n => n + 1);
+      }
+    };
+    // Can thi hanh tu dong khi CRUD, khi app active, va kiem tra lai 12 giay/lan.
+    const unsubscribe = subscribeLocalChanges(run);
+    const interval = setInterval(run, 12000);
+    const appEvent = AppState.addEventListener('change', state => {
+      if (state === 'active') run();
+    });
+    run();
+    return () => {
+      live = false;
+      unsubscribe();
+      clearInterval(interval);
+      appEvent.remove();
+    };
+  }, [ready, startupError]);
+
   const t = (key) => translations[language][key] || key;
   const toggleLanguage = () => setLanguage(old => old === 'en' ? 'vi' : 'en');
   function openDetail(id) { setSelectedId(id); setScreen('detail'); }
@@ -44,7 +74,8 @@ export default function App() {
           <Text style={s.errorText}>{t('dbError')}</Text><Text style={s.errorText}>{startupError}</Text>
         </View> : <>
           {screen === 'list' && <DishListScreen t={t} language={language} onToggleLanguage={toggleLanguage}
-            filters={filters} setFilters={setFilters} onDetail={openDetail}
+            filters={filters} setFilters={setFilters} syncStatus={syncStatus}
+            syncRevision={syncRevision} onDetail={openDetail}
             onAdd={openAdd} onCategories={() => setScreen('categories')}/>}
           {screen === 'detail' && <DishDetailScreen id={selectedId} t={t} language={language}
             onToggleLanguage={toggleLanguage} onBack={() => setScreen('list')}

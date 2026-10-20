@@ -56,3 +56,21 @@ export const mockApi = {
   updateOnlineDish,
   deleteOnlineDish,
 };
+
+export async function createOnlineCategory(category) {
+  return request('/BIT246755_DishCategory', {
+    method: 'POST',
+    body: JSON.stringify(category),
+  });
+}
+export async function updateOnlineCategory(id, category) {
+  return request(`/BIT246755_DishCategory/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    body: JSON.stringify(category),
+  });
+}
+export async function deleteOnlineCategory(id) {
+  return request(`/BIT246755_DishCategory/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+  });
+}
