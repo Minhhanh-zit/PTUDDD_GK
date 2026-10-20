@@ -31,6 +31,14 @@ export async function getOnlineDishes() {
   return request('/BIT246755_Dish');
 }
 
+export async function getOnlineCategoryById(id) {
+  return request(`/BIT246755_DishCategory/${encodeURIComponent(id)}`);
+}
+
+export async function getOnlineDishById(id) {
+  return request(`/BIT246755_Dish/${encodeURIComponent(id)}`);
+}
+
 // THÊM MÓN ĂN
 export async function createOnlineDish(dish) {
   return request('/BIT246755_Dish', {
