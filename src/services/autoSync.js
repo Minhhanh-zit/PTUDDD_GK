@@ -17,7 +17,13 @@ const STATE = P + 'SyncState';
 
 const normalize = v => String(v ?? '').trim().toLocaleLowerCase();
 const numberId = v => Number(v);
-const remoteId = r => r && r.id != null ? String(r.id) : null;
+// MockAPI configured with a student-prefixed primary key. Prefer the real route ID;
+// handle standard MockAPI 'id' as well for compatibility with other configurations.
+const remoteId = record => {
+  if (!record || typeof record !== 'object') return null;
+  const value = record.id ?? record.BIT246755_Id;
+  return value == null || String(value).trim() === '' ? null : String(value);
+};
 const readValue = (record, key, fallback) => record[P + key] ?? fallback;
 const booleanValue = v => v === true || v === 1 || v === '1' || v === 'true';
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
@@ -97,14 +103,12 @@ async function matchRemoteIds(db, entity, remoteRecords) {
 
 function categoryPayload(c) {
   return {
-    BIT246755_Id: c.id,
     BIT246755_Name: c.name,
     BIT246755_Description: c.description || '',
   };
 }
 function dishPayload(d) {
   return {
-    BIT246755_Id: d.id,
     BIT246755_Name: d.name,
     BIT246755_Price: d.price,
     BIT246755_PreparationTime: d.preparationTime,
@@ -156,8 +160,21 @@ async function upload(db, entity, deleted) {
     const saved = entity === 'category'
       ? (state.remoteId ? await updateOnlineCategory(state.remoteId, payload) : await createOnlineCategory(payload))
       : (state.remoteId ? await updateOnlineDish(state.remoteId, payload) : await createOnlineDish(payload));
-    if (!remoteId(saved)) throw new Error('MockAPI returned no id; sync paused');
-    await clearVersion(db, entity, state, remoteId(saved));
+    let resolvedId = remoteId(saved);
+    if (!resolvedId) {
+      // GET fallback helps when a MockAPI endpoint omits the ID from its response.
+      // Do not POST again blindly, which created duplicate sample categories before.
+      const online = entity === 'category' ? await getOnlineCategories() : await getOnlineDishes();
+      const matching = online.filter(r =>
+        normalize(readValue(r, 'Name', '')) === normalize(row.name) &&
+        (entity === 'category' ||
+          Number(readValue(r, 'DishCategoryId', -1)) === row.categoryId)
+      );
+      // Only accept an unambiguous match. Never guess an ID for an unrelated row.
+      if (matching.length === 1) resolvedId = remoteId(matching[0]);
+    }
+    if (!resolvedId) throw new Error('Missing remote record ID; safely paused without retrying POST immediately');
+    await clearVersion(db, entity, state, resolvedId);
   }
 }
 
