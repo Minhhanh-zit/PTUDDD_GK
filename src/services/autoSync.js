@@ -340,6 +340,7 @@ async function pendingCount(db) {
 
 async function performSync() {
   const db = await getSyncDatabase();
+  let stage = 'read remote data';
   try {
     // GET truoc khi ghi: neu offline/HTTP loi thi khong ghi sai cloud.
     let [remoteCats, remoteDishes] = await Promise.all([
@@ -348,20 +349,30 @@ async function performSync() {
     if (!Array.isArray(remoteCats) || !Array.isArray(remoteDishes)) {
       throw new Error('MockAPI did not return arrays');
     }
+    stage = 'prepare pending changes';
     await ensureTracked(db);
+    stage = 'match remote categories';
     await matchRemoteIds(db, 'category', remoteCats);
+    stage = 'upload categories';
     await upload(db, 'category', false);
 
     // Category phai co truoc Dish de giu quan he.
+    stage = 'reload categories';
     remoteCats = await getOnlineCategories();
+    stage = 'match remote dishes';
     await matchRemoteIds(db, 'dish', remoteDishes);
+    stage = 'upload dishes';
     await upload(db, 'dish', false);
+    stage = 'delete remote dishes';
     await upload(db, 'dish', true);
+    stage = 'delete remote categories';
     await upload(db, 'category', true);
 
+    stage = 'reload remote data';
     [remoteCats, remoteDishes] = await Promise.all([
       getOnlineCategories(), getOnlineDishes(),
     ]);
+    stage = 'apply remote changes';
     let changed = 0;
     for (const row of remoteCats) {
       try { if ((await upsertCategory(db, row)).changed) changed++; }
@@ -375,8 +386,8 @@ async function performSync() {
     changed += await removeMissingRemote(db, 'category', new Set(remoteCats.map(remoteId)));
     return { phase: 'online', pending: await pendingCount(db), changed, error: '' };
   } catch (e) {
-    console.warn('Food Manager sync:', e.message);
-    const message = String(e.message || e);
+    const message = stage + ': ' + String(e.message || e);
+    console.warn('Food Manager sync:', message);
     const offline = /network|fetch|abort|timed out|internet/i.test(message);
     return { phase: offline ? 'offline' : 'error', pending: await pendingCount(db),
       changed: 0, error: message };
