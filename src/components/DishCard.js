@@ -10,7 +10,7 @@ export default function DishCard({ item, t, onDetail }) {
   return (
     <Pressable style={s.card} onPress={() => onDetail(item.id)}>
       <View style={s.cardTop}>
-        <DishPhoto uri={item.imageUrl} categoryName={item.categoryName} size={90}/>
+        <DishPhoto uri={item.imageUrl} dishName={item.name} categoryName={item.categoryName} size={90}/>
         <View style={{ flex: 1, gap: 7 }}>
           <Text style={s.dishName} numberOfLines={2}>{item.name}</Text>
           <Text style={s.categoryName}>{item.categoryName}</Text>

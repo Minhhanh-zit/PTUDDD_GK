@@ -38,7 +38,7 @@ export default function DishDetailScreen({ id, t, language, onToggleLanguage, on
     {loading ? <ActivityIndicator style={{ marginTop: 70 }} color={C.purpleDark} size="large"/> :
       !dish || error ? <EmptyState icon="alert-circle-outline" title={error ? t('dbError') : t('missingDish')}/> :
       <ScrollView contentContainerStyle={s.body} showsVerticalScrollIndicator={false}>
-        <DishPhoto uri={cover?.imageUrl} categoryName={dish.categoryName} size="100%" style={s.mainPhoto}/>
+        <DishPhoto uri={cover?.imageUrl} dishName={dish.name} categoryName={dish.categoryName} size="100%" style={s.mainPhoto}/>
         {images.length > 1 && <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.gallery}>
           {images.map(image => <View key={image.id} style={s.thumbWrap}>
             <DishPhoto uri={image.imageUrl} size={80} categoryName={dish.categoryName}/>
