@@ -41,7 +41,7 @@ export default function DishDetailScreen({ id, t, language, onToggleLanguage, on
         <DishPhoto uri={cover?.imageUrl} dishName={dish.name} categoryName={dish.categoryName} size="100%" style={s.mainPhoto}/>
         {images.length > 1 && <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.gallery}>
           {images.map(image => <View key={image.id} style={s.thumbWrap}>
-            <DishPhoto uri={image.imageUrl} size={80} categoryName={dish.categoryName}/>
+            <DishPhoto uri={image.imageUrl} dishName={dish.name} size={80} categoryName={dish.categoryName}/>
             {!!image.isThumbnail && <View style={s.star}><Ionicons name="star" color={C.white} size={11}/></View>}
           </View>)}
         </ScrollView>}

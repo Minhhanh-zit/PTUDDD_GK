@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { C, categoryIcon } from '../constants/theme';
 
@@ -74,27 +75,49 @@ const LEGACY_PHOTO_IDS = [
   '1556679343-c7306c1976bc', '1578985545062-69928b1d9587',
 ];
 
+// URL cua nguoi dung duoc giu trong SQLite/MockAPI; chi toi uu khi hien thi.
+function displayImageUrl(uri, size) {
+  if (typeof uri !== 'string' || !/^https?:\/\/\S+$/i.test(uri.trim())) return null;
+  const url = uri.trim();
+  if (!url.startsWith('https://images.unsplash.com/')) return url;
+  const px = typeof size === 'number' ? Math.ceil(size * 3) : 900;
+  return /[?&]w=\d+/.test(url)
+    ? url.replace(/([?&])w=\d+/, '$1w=' + px)
+    : url + (url.includes('?') ? '&' : '?') + 'w=' + px;
+}
+
 export function DishPhoto({ uri, dishName = '', categoryName = '', size = 90, style }) {
   const [photoAttempt, setPhotoAttempt] = useState(0);
   const normalizedName = String(dishName).trim().toLocaleLowerCase('vi');
   const bundled = BUNDLED_DISH_PHOTOS[normalizedName];
   const legacyUrl = typeof uri === 'string' && LEGACY_PHOTO_IDS.some(id => uri.includes(id));
-  const sources = bundled && (!uri || legacyUrl)
-    ? [bundled]
-    : [uri ? { uri } : null, bundled].filter(Boolean);
+  const remoteUri = legacyUrl ? null : displayImageUrl(uri, size);
+
+  // Anh mau dong goi luon co uu tien voi seed cu; anh tuy chinh uu tien neu hop le.
+  // Neu tai anh tuy chinh that bai thi thu anh offline, cuoi cung moi ve icon.
+  const sources = remoteUri
+    ? [{ uri: remoteUri }, ...(bundled ? [bundled] : [])]
+    : bundled ? [bundled] : [];
   const currentSource = sources[photoAttempt] || null;
-  useEffect(() => { setPhotoAttempt(0); }, [uri, dishName]);
+  useEffect(() => { setPhotoAttempt(0); }, [uri, dishName, size]);
+
   return (
     <View style={[s.photo, { width: size, height: size }, style]}>
       {currentSource ? (
-        <>
-          {/* Nen mo giu khung day mau, anh phia truoc luon hien day du mon. */}
-          <Image source={currentSource} resizeMode="cover" blurRadius={12}
-            style={[StyleSheet.absoluteFillObject, { opacity: 0.18 }]}/>
-          <Image key={photoAttempt} source={currentSource} resizeMode="contain"
-            style={StyleSheet.absoluteFillObject}
-            onError={() => setPhotoAttempt(previous => previous + 1)}/>
-        </>
+        <Image
+          key={String(normalizedName) + ':' + photoAttempt + ':' + String(remoteUri || '')}
+          source={currentSource}
+          placeholder={remoteUri && bundled && photoAttempt === 0 ? bundled : undefined}
+          placeholderContentFit="contain"
+          style={s.fullPhoto}
+          contentFit="contain"
+          contentPosition="center"
+          transition={180}
+          cachePolicy="memory-disk"
+          recyclingKey={normalizedName + ':' + String(remoteUri || '') + ':' + photoAttempt}
+          accessibilityLabel={dishName || categoryName}
+          onError={() => setPhotoAttempt(previous => previous + 1)}
+        />
       ) : (
         <Ionicons name={categoryIcon(categoryName)}
           size={Math.max(28, (typeof size === 'number' ? size : 160) * 0.37)}
@@ -129,6 +152,7 @@ const s = StyleSheet.create({
     flexDirection: 'row', gap: 4, alignItems: 'center' },
   langText: { color: C.blueDark, fontSize: 12, fontWeight: '800' },
   photo: { backgroundColor: C.purpleSoft, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderRadius: 16 },
+  fullPhoto: { width: '100%', height: '100%' },
   empty: { paddingVertical: 45, alignItems: 'center', gap: 10 },
   emptyTitle: { color: C.text, fontSize: 18, fontWeight: '800' },
   emptyHint: { color: C.muted, fontSize: 13, textAlign: 'center' },
