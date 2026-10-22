@@ -46,13 +46,31 @@ export function ScreenBar({ title, onBack, language, onToggleLanguage, actionIco
   );
 }
 
-export function DishPhoto({ uri, categoryName = '', size = 90, style }) {
-  const [failed, setFailed] = useState(false);
-  useEffect(() => { setFailed(false); }, [uri]);
+// Anh thuc cho mon Tra chanh neu SQLite/MockAPI chua co URL hoac URL cu bi loi.
+// Nguon: Unsplash, anh Na Sen va An Nguyen (mien phi theo Unsplash License).
+const DEFAULT_DISH_PHOTOS = {
+  'trà chanh': [
+    'https://images.unsplash.com/photo-1681974913878-1c446bac7cf5?auto=format&fit=crop&w=1200&q=85',
+    'https://images.unsplash.com/photo-1606444006818-3e66c09f2724?auto=format&fit=crop&w=1200&q=85',
+  ],
+  'tra chanh': [
+    'https://images.unsplash.com/photo-1681974913878-1c446bac7cf5?auto=format&fit=crop&w=1200&q=85',
+    'https://images.unsplash.com/photo-1606444006818-3e66c09f2724?auto=format&fit=crop&w=1200&q=85',
+  ],
+};
+
+export function DishPhoto({ uri, dishName = '', categoryName = '', size = 90, style }) {
+  const [photoAttempt, setPhotoAttempt] = useState(0);
+  const normalizedName = String(dishName).trim().toLocaleLowerCase('vi');
+  const fallbacks = DEFAULT_DISH_PHOTOS[normalizedName] || [];
+  const photoSources = [uri, ...fallbacks].filter(Boolean);
+  const currentUri = photoSources[photoAttempt];
+  useEffect(() => { setPhotoAttempt(0); }, [uri, dishName]);
   return (
     <View style={[s.photo, { width: size, height: size }, style]}>
-      {uri && !failed ? (
-        <Image source={{ uri }} resizeMode="cover" style={StyleSheet.absoluteFillObject} onError={() => setFailed(true)}/>
+      {currentUri ? (
+        <Image source={{ uri: currentUri }} resizeMode="cover" style={StyleSheet.absoluteFillObject}
+          onError={() => setPhotoAttempt(previous => previous + 1)}/>
       ) : (
         <Ionicons name={categoryIcon(categoryName)} size={Math.max(28, (typeof size === 'number' ? size : 160) * 0.37)} color={C.purpleDark}/>
       )}
