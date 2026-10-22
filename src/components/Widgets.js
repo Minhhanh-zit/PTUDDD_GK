@@ -87,9 +87,14 @@ export function DishPhoto({ uri, dishName = '', categoryName = '', size = 90, st
   return (
     <View style={[s.photo, { width: size, height: size }, style]}>
       {currentSource ? (
-        <Image key={photoAttempt} source={currentSource} resizeMode="cover"
-          style={StyleSheet.absoluteFillObject}
-          onError={() => setPhotoAttempt(previous => previous + 1)}/>
+        <>
+          {/* Nen mo giu khung day mau, anh phia truoc luon hien day du mon. */}
+          <Image source={currentSource} resizeMode="cover" blurRadius={12}
+            style={[StyleSheet.absoluteFillObject, { opacity: 0.18 }]}/>
+          <Image key={photoAttempt} source={currentSource} resizeMode="contain"
+            style={StyleSheet.absoluteFillObject}
+            onError={() => setPhotoAttempt(previous => previous + 1)}/>
+        </>
       ) : (
         <Ionicons name={categoryIcon(categoryName)}
           size={Math.max(28, (typeof size === 'number' ? size : 160) * 0.37)}
