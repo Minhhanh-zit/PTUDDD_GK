@@ -46,33 +46,54 @@ export function ScreenBar({ title, onBack, language, onToggleLanguage, actionIco
   );
 }
 
-// Anh thuc cho mon Tra chanh neu SQLite/MockAPI chua co URL hoac URL cu bi loi.
-// Nguon: Unsplash, anh Na Sen va An Nguyen (mien phi theo Unsplash License).
-const DEFAULT_DISH_PHOTOS = {
-  'trà chanh': [
-    'https://images.unsplash.com/photo-1681974913878-1c446bac7cf5?auto=format&fit=crop&w=1200&q=85',
-    'https://images.unsplash.com/photo-1606444006818-3e66c09f2724?auto=format&fit=crop&w=1200&q=85',
-  ],
-  'tra chanh': [
-    'https://images.unsplash.com/photo-1681974913878-1c446bac7cf5?auto=format&fit=crop&w=1200&q=85',
-    'https://images.unsplash.com/photo-1606444006818-3e66c09f2724?auto=format&fit=crop&w=1200&q=85',
-  ],
+// Anh chup mon an dong goi trong project: mo duoc ca khi dien thoai mat mang.
+// Phai dung require() voi duong dan co dinh de Metro dong goi file anh.
+const BUNDLED_DISH_PHOTOS = {
+  'trà chanh': require('../../assets/dishes/tra-chanh.jpg'),
+  'tra chanh': require('../../assets/dishes/tra-chanh.jpg'),
+  'iced tea': require('../../assets/dishes/tra-chanh.jpg'),
+  'nước cam': require('../../assets/dishes/nuoc-cam.jpg'),
+  'nuoc cam': require('../../assets/dishes/nuoc-cam.jpg'),
+  'orange juice': require('../../assets/dishes/nuoc-cam.jpg'),
+  'bánh chocolate': require('../../assets/dishes/banh-chocolate.jpg'),
+  'banh chocolate': require('../../assets/dishes/banh-chocolate.jpg'),
+  'chocolate cake': require('../../assets/dishes/banh-chocolate.jpg'),
+  'cơm gà': require('../../assets/dishes/com-ga.jpg'),
+  'com ga': require('../../assets/dishes/com-ga.jpg'),
+  'chicken rice': require('../../assets/dishes/com-ga.jpg'),
+  'phở bò': require('../../assets/dishes/pho-bo.jpg'),
+  'pho bo': require('../../assets/dishes/pho-bo.jpg'),
+  'beef noodles': require('../../assets/dishes/pho-bo.jpg'),
 };
+
+// Cac URL anh seed cu (Unsplash) van duoc luu trong SQLite va dong bo len MockAPI.
+// Thay vao do, hien thi anh dong goi tai app de tranh trang tim neu link ngoai bi chan.
+const LEGACY_PHOTO_IDS = [
+  '1604908176997-125f25cc6f3d', '1512058564366-18510be2db19',
+  '1569718212165-3a8278d5f624', '1600271886742-f049cd451bba',
+  '1556679343-c7306c1976bc', '1578985545062-69928b1d9587',
+];
 
 export function DishPhoto({ uri, dishName = '', categoryName = '', size = 90, style }) {
   const [photoAttempt, setPhotoAttempt] = useState(0);
   const normalizedName = String(dishName).trim().toLocaleLowerCase('vi');
-  const fallbacks = DEFAULT_DISH_PHOTOS[normalizedName] || [];
-  const photoSources = [uri, ...fallbacks].filter(Boolean);
-  const currentUri = photoSources[photoAttempt];
+  const bundled = BUNDLED_DISH_PHOTOS[normalizedName];
+  const legacyUrl = typeof uri === 'string' && LEGACY_PHOTO_IDS.some(id => uri.includes(id));
+  const sources = bundled && (!uri || legacyUrl)
+    ? [bundled]
+    : [uri ? { uri } : null, bundled].filter(Boolean);
+  const currentSource = sources[photoAttempt] || null;
   useEffect(() => { setPhotoAttempt(0); }, [uri, dishName]);
   return (
     <View style={[s.photo, { width: size, height: size }, style]}>
-      {currentUri ? (
-        <Image source={{ uri: currentUri }} resizeMode="cover" style={StyleSheet.absoluteFillObject}
+      {currentSource ? (
+        <Image key={photoAttempt} source={currentSource} resizeMode="cover"
+          style={StyleSheet.absoluteFillObject}
           onError={() => setPhotoAttempt(previous => previous + 1)}/>
       ) : (
-        <Ionicons name={categoryIcon(categoryName)} size={Math.max(28, (typeof size === 'number' ? size : 160) * 0.37)} color={C.purpleDark}/>
+        <Ionicons name={categoryIcon(categoryName)}
+          size={Math.max(28, (typeof size === 'number' ? size : 160) * 0.37)}
+          color={C.purpleDark}/>
       )}
     </View>
   );
